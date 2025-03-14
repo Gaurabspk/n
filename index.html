@@ -106,10 +106,8 @@
 
     /* Mobile Controls */
     .mobile-controls {
-      display: flex;
-      justify-content: center;
+      display: none;
       margin-top: 10px;
-      flex-wrap: wrap;
     }
 
     .mobile-controls button {
@@ -169,10 +167,6 @@
       <div>⏳ Wave: <span id="wave">1</span></div>
     </div>
     <div class="mobile-controls">
-      <button id="up">⬆️</button>
-      <button id="left">⬅️</button>
-      <button id="down">⬇️</button>
-      <button id="right">➡️</button>
       <button id="shoot">🔫 Shoot</button>
     </div>
     <p id="message"></p>
@@ -360,45 +354,23 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // Handle keyboard input
-    document.addEventListener('keydown', (e) => {
-      // Prevent player from moving outside the canvas
-      if (e.key === 'ArrowUp' && player.y > 0) player.y -= player.speed;
-      if (e.key === 'ArrowDown' && player.y + player.height < canvas.height) player.y += player.speed;
-      if (e.key === 'ArrowLeft' && player.x > 0) player.x -= player.speed;
-      if (e.key === 'ArrowRight' && player.x + player.width < canvas.width) player.x += player.speed;
+    // Handle tilt-based movement
+    window.addEventListener('deviceorientation', (e) => {
+      const gamma = e.gamma; // Tilt left/right (-90 to 90)
+      const beta = e.beta; // Tilt forward/backward (-180 to 180)
 
-      // Shoot bullets
-      if (e.key === ' ' && player.ammo > 0) {
-        const angle = Math.atan2(
-          player.y - canvas.height / 2,
-          player.x - canvas.width / 2
-        );
-        bullets.push({
-          x: player.x + player.width / 2,
-          y: player.y + player.height / 2,
-          width: 10,
-          height: 10,
-          speedX: Math.cos(angle) * -5,
-          speedY: Math.sin(angle) * -5,
-        });
-        player.ammo--;
-      }
+      // Adjust player position based on tilt
+      if (gamma > 10) player.x += player.speed; // Tilt right
+      if (gamma < -10) player.x -= player.speed; // Tilt left
+      if (beta > 10) player.y += player.speed; // Tilt forward
+      if (beta < -10) player.y -= player.speed; // Tilt backward
+
+      // Ensure player stays within canvas bounds
+      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+      player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     });
 
-    // Mobile controls
-    document.getElementById('up').addEventListener('click', () => {
-      if (player.y > 0) player.y -= player.speed;
-    });
-    document.getElementById('down').addEventListener('click', () => {
-      if (player.y + player.height < canvas.height) player.y += player.speed;
-    });
-    document.getElementById('left').addEventListener('click', () => {
-      if (player.x > 0) player.x -= player.speed;
-    });
-    document.getElementById('right').addEventListener('click', () => {
-      if (player.x + player.width < canvas.width) player.x += player.speed;
-    });
+    // Shoot button for mobile
     document.getElementById('shoot').addEventListener('click', () => {
       if (player.ammo > 0) {
         const angle = Math.atan2(
