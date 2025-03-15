@@ -68,7 +68,7 @@
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
     }
 
-    .game-over {
+    .game-over, .game-won {
       display: none;
       position: absolute;
       top: 50%;
@@ -83,13 +83,17 @@
       max-width: 400px;
     }
 
-    .game-over h2 {
+    .game-over h2, .game-won h2 {
       font-size: 1.5rem;
       color: #e74c3c;
       margin-bottom: 10px;
     }
 
-    .game-over button {
+    .game-won h2 {
+      color: #2ecc71;
+    }
+
+    .game-over button, .game-won button {
       padding: 10px 20px;
       font-size: 1rem;
       cursor: pointer;
@@ -100,7 +104,7 @@
       transition: background-color 0.3s, transform 0.2s;
     }
 
-    .game-over button:hover {
+    .game-over button:hover, .game-won button:hover {
       background-color: #2980b9;
       transform: scale(1.05);
     }
@@ -130,10 +134,9 @@
 
     /* Footer */
     footer {
-      position: absolute;
-      bottom: 10px;
       font-size: 0.8rem;
       color: #888;
+      margin-top: 10px;
     }
 
     /* Mobile Styles */
@@ -150,11 +153,11 @@
         font-size: 0.9rem;
       }
 
-      .game-over h2 {
+      .game-over h2, .game-won h2 {
         font-size: 1.2rem;
       }
 
-      .game-over button {
+      .game-over button, .game-won button {
         font-size: 0.9rem;
       }
 
@@ -162,6 +165,10 @@
         display: flex;
         justify-content: center;
         flex-wrap: wrap;
+      }
+
+      footer {
+        font-size: 0.7rem;
       }
     }
   </style>
@@ -173,7 +180,7 @@
     <div class="stats">
       <div>❤️ Health: <span id="health">1000</span></div>
       <div>🔫 Ammo: <span id="ammo">20</span></div>
-      <div>⏳ Wave: <span id="wave">1</span></div>
+      <div>⏳ Level: <span id="level">1</span></div>
     </div>
     <div class="mobile-controls">
       <button id="shoot">🔫 Shoot</button>
@@ -185,8 +192,15 @@
   <!-- Game Over Screen -->
   <div class="game-over" id="gameOver">
     <h2>You Died!</h2>
-    <p>You survived <span id="finalWave">1</span> waves.</p>
+    <p>You reached level <span id="finalLevel">1</span>.</p>
     <button id="restartButton">Restart Game</button>
+  </div>
+
+  <!-- Game Won Screen -->
+  <div class="game-won" id="gameWon">
+    <h2>You Won!</h2>
+    <p>Congratulations! You survived all levels.</p>
+    <button id="restartButtonWon">Restart Game</button>
   </div>
 
   <script>
@@ -194,11 +208,13 @@
     const ctx = canvas.getContext('2d');
     const healthDisplay = document.getElementById('health');
     const ammoDisplay = document.getElementById('ammo');
-    const waveDisplay = document.getElementById('wave');
+    const levelDisplay = document.getElementById('level');
     const message = document.getElementById('message');
     const gameOverScreen = document.getElementById('gameOver');
-    const finalWaveDisplay = document.getElementById('finalWave');
+    const gameWonScreen = document.getElementById('gameWon');
+    const finalLevelDisplay = document.getElementById('finalLevel');
     const restartButton = document.getElementById('restartButton');
+    const restartButtonWon = document.getElementById('restartButtonWon');
 
     // Set canvas size based on screen size
     function setCanvasSize() {
@@ -223,13 +239,15 @@
 
     // Zombies
     let zombies = [];
-    let wave = 1;
+    let level = 1;
+    let maxLevel = 5;
 
     // Bullets
     let bullets = [];
 
     // Game state
     let isGameOver = false;
+    let isGameWon = false;
 
     // Draw player
     function drawPlayer() {
@@ -257,19 +275,20 @@
     function updateStats() {
       healthDisplay.textContent = player.health;
       ammoDisplay.textContent = player.ammo;
-      waveDisplay.textContent = wave;
+      levelDisplay.textContent = level;
     }
 
     // Spawn zombies
     function spawnZombies() {
-      const numZombies = wave * 10;
+      const numZombies = level * 10; // Increase zombies per level
+      const zombieSpeed = 2 + (level - 1) * 0.5; // Increase speed per level
       for (let i = 0; i < numZombies; i++) {
         zombies.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           width: 30,
           height: 30,
-          speed: 2,
+          speed: zombieSpeed,
         });
       }
     }
@@ -325,14 +344,14 @@
           ) {
             zombies.splice(zombieIndex, 1);
             bullets.splice(index, 1);
-            player.ammo += 1;
             player.kills += 1;
 
-            // Increase health based on kills
+            // Increase health and ammo based on kills
             if (player.kills % 3 === 0) {
-              player.health += 1500;
-            } else {
-              player.health += 500;
+              player.health += 200;
+            }
+            if (player.kills % 5 === 0) {
+              player.ammo += 10;
             }
           }
         });
@@ -341,10 +360,17 @@
 
     // Show game over screen
     function showGameOver() {
-      finalWaveDisplay.textContent = wave;
+      finalLevelDisplay.textContent = level;
       gameOverScreen.style.display = 'block';
       message.textContent = 'You died!';
       isGameOver = true;
+    }
+
+    // Show game won screen
+    function showGameWon() {
+      gameWonScreen.style.display = 'block';
+      message.textContent = 'You won!';
+      isGameWon = true;
     }
 
     // Restart game
@@ -352,11 +378,13 @@
       player.health = 1000;
       player.ammo = 20;
       player.kills = 0;
-      wave = 1;
+      level = 1;
       zombies = [];
       bullets = [];
       isGameOver = false;
+      isGameWon = false;
       gameOverScreen.style.display = 'none';
+      gameWonScreen.style.display = 'none';
       message.textContent = '';
       updateStats();
       spawnZombies();
@@ -364,7 +392,7 @@
 
     // Game loop
     function gameLoop() {
-      if (isGameOver) return;
+      if (isGameOver || isGameWon) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawPlayer();
@@ -376,9 +404,13 @@
 
       // Check if all zombies are dead
       if (zombies.length === 0) {
-        wave++;
+        level++;
+        if (level > maxLevel) {
+          showGameWon();
+          return;
+        }
         spawnZombies();
-        message.textContent = `Wave ${wave} incoming!`;
+        message.textContent = `Level ${level} incoming!`;
       }
 
       requestAnimationFrame(gameLoop);
@@ -402,7 +434,7 @@
 
     // Shoot button for mobile
     document.getElementById('shoot').addEventListener('click', () => {
-      if (player.ammo > 0 && !isGameOver) {
+      if (player.ammo > 0 && !isGameOver && !isGameWon) {
         const angle = Math.atan2(
           player.y - canvas.height / 2,
           player.x - canvas.width / 2
@@ -419,33 +451,9 @@
       }
     });
 
-    // Double-tap to shoot
-    let lastTap = 0;
-    canvas.addEventListener('touchend', (e) => {
-      const currentTime = new Date().getTime();
-      const tapLength = currentTime - lastTap;
-      if (tapLength < 300 && tapLength > 0) { // Double-tap detected
-        if (player.ammo > 0 && !isGameOver) {
-          const angle = Math.atan2(
-            player.y - canvas.height / 2,
-            player.x - canvas.width / 2
-          );
-          bullets.push({
-            x: player.x + player.width / 2,
-            y: player.y + player.height / 2,
-            width: 10,
-            height: 10,
-            speedX: Math.cos(angle) * -5,
-            speedY: Math.sin(angle) * -5,
-          });
-          player.ammo--;
-        }
-      }
-      lastTap = currentTime;
-    });
-
-    // Restart button
+    // Restart buttons
     restartButton.addEventListener('click', restartGame);
+    restartButtonWon.addEventListener('click', restartGame);
 
     // Initialize game
     spawnZombies();
