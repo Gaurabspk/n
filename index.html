@@ -26,6 +26,7 @@
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
       width: 90%;
       max-width: 800px;
+      position: relative;
     }
 
     h1 {
@@ -127,6 +128,14 @@
       transform: scale(1.05);
     }
 
+    /* Footer */
+    footer {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.8rem;
+      color: #888;
+    }
+
     /* Mobile Styles */
     @media (max-width: 600px) {
       h1 {
@@ -170,11 +179,12 @@
       <button id="shoot">🔫 Shoot</button>
     </div>
     <p id="message"></p>
+    <footer>Made by Gaurab Sapkota</footer>
   </div>
 
   <!-- Game Over Screen -->
   <div class="game-over" id="gameOver">
-    <h2>Game Over!</h2>
+    <h2>You Died!</h2>
     <p>You survived <span id="finalWave">1</span> waves.</p>
     <button id="restartButton">Restart Game</button>
   </div>
@@ -208,6 +218,7 @@
       speed: 15,
       health: 1000,
       ammo: 20,
+      kills: 0,
     };
 
     // Zombies
@@ -216,6 +227,9 @@
 
     // Bullets
     let bullets = [];
+
+    // Game state
+    let isGameOver = false;
 
     // Draw player
     function drawPlayer() {
@@ -278,6 +292,7 @@
           player.health -= 10;
           if (player.health <= 0) {
             player.health = 0;
+            isGameOver = true;
             showGameOver();
           }
         }
@@ -311,6 +326,14 @@
             zombies.splice(zombieIndex, 1);
             bullets.splice(index, 1);
             player.ammo += 1;
+            player.kills += 1;
+
+            // Increase health based on kills
+            if (player.kills % 3 === 0) {
+              player.health += 1500;
+            } else {
+              player.health += 500;
+            }
           }
         });
       });
@@ -320,22 +343,29 @@
     function showGameOver() {
       finalWaveDisplay.textContent = wave;
       gameOverScreen.style.display = 'block';
+      message.textContent = 'You died!';
+      isGameOver = true;
     }
 
     // Restart game
     function restartGame() {
       player.health = 1000;
       player.ammo = 20;
+      player.kills = 0;
       wave = 1;
       zombies = [];
       bullets = [];
+      isGameOver = false;
       gameOverScreen.style.display = 'none';
+      message.textContent = '';
       updateStats();
       spawnZombies();
     }
 
     // Game loop
     function gameLoop() {
+      if (isGameOver) return;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawPlayer();
       drawZombies();
@@ -372,7 +402,7 @@
 
     // Shoot button for mobile
     document.getElementById('shoot').addEventListener('click', () => {
-      if (player.ammo > 0) {
+      if (player.ammo > 0 && !isGameOver) {
         const angle = Math.atan2(
           player.y - canvas.height / 2,
           player.x - canvas.width / 2
@@ -395,7 +425,7 @@
       const currentTime = new Date().getTime();
       const tapLength = currentTime - lastTap;
       if (tapLength < 300 && tapLength > 0) { // Double-tap detected
-        if (player.ammo > 0) {
+        if (player.ammo > 0 && !isGameOver) {
           const angle = Math.atan2(
             player.y - canvas.height / 2,
             player.x - canvas.width / 2
