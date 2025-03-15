@@ -225,7 +225,7 @@
     window.addEventListener('resize', setCanvasSize);
 
     // Player
-    const player = {
+    let player = {
       x: canvas.width / 2,
       y: canvas.height / 2,
       width: 40,
@@ -248,6 +248,7 @@
     // Game state
     let isGameOver = false;
     let isGameWon = false;
+    let gameLoopId;
 
     // Draw player
     function drawPlayer() {
@@ -364,6 +365,7 @@
       gameOverScreen.style.display = 'block';
       message.textContent = 'You died!';
       isGameOver = true;
+      cancelAnimationFrame(gameLoopId); // Stop the game loop
     }
 
     // Show game won screen
@@ -371,16 +373,25 @@
       gameWonScreen.style.display = 'block';
       message.textContent = 'You won!';
       isGameWon = true;
+      cancelAnimationFrame(gameLoopId); // Stop the game loop
     }
 
     // Restart game
     function restartGame() {
-      player.health = 1000;
-      player.ammo = 20;
-      player.kills = 0;
-      level = 1;
+      player = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        width: 40,
+        height: 40,
+        color: '#e74c3c',
+        speed: 15,
+        health: 1000,
+        ammo: 20,
+        kills: 0,
+      };
       zombies = [];
       bullets = [];
+      level = 1;
       isGameOver = false;
       isGameWon = false;
       gameOverScreen.style.display = 'none';
@@ -388,6 +399,7 @@
       message.textContent = '';
       updateStats();
       spawnZombies();
+      gameLoopId = requestAnimationFrame(gameLoop); // Restart the game loop
     }
 
     // Game loop
@@ -413,7 +425,7 @@
         message.textContent = `Level ${level} incoming!`;
       }
 
-      requestAnimationFrame(gameLoop);
+      gameLoopId = requestAnimationFrame(gameLoop);
     }
 
     // Handle tilt-based movement
@@ -457,7 +469,7 @@
 
     // Initialize game
     spawnZombies();
-    gameLoop();
+    gameLoopId = requestAnimationFrame(gameLoop);
   </script>
 </body>
 </html>
